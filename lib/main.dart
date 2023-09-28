@@ -218,8 +218,8 @@ class TakePictureScreenState extends State<TakePictureScreen>{
 
     var request = http.MultipartRequest('PUT',Uri.parse(uri));
     request.files.add(await http.MultipartFile.fromPath('image1',imagePic, contentType: MediaType('image','jpeg')));
-    request.files.add(await http.MultipartFile.fromBytes('meta',(await rootBundle.load('json/parm.json')).buffer.asUint8List(),
-        filename:'parm.json',contentType: MediaType('application','json')));
+    // request.files.add(await http.MultipartFile.fromBytes('meta',(await rootBundle.load('json/parm.json')).buffer.asUint8List(),
+    //     filename:'parm.json',contentType: MediaType('application','json')));
 
     var timeoutDuration = const Duration(seconds: 30);
 

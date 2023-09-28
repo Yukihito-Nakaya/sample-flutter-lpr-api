@@ -1,125 +1,145 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(SampleApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class SampleApp extends StatelessWidget{
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a blue toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      title: 'Sensing API LPR API',
+      home: SampleFlutterLprApi(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class SampleFlutterLprApi extends StatelessWidget{
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context){
+    return Scaffold(
+      body: TakePictureScreen(),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class TakePictureScreen extends StatefulWidget {
+  @override
+  TakePictureScreenState createState() => TakePictureScreenState();
+}
 
-  void _incrementCounter() {
+class TakePictureScreenState extends State<TakePictureScreen>{
+  File? _imageFile;
+  Size? _imageSize;
+
+  // List _recognitionResults = [];
+  final ImagePicker _picker = ImagePicker();
+  String _imagePath = '';
+  String _imageSave = '';
+
+  _setImagePath() async {
+    _imagePath = (await getApplicationDocumentsDirectory()).path;
+  }
+
+
+
+  void _getLicenseplate(ImageSource imageSource)async {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _imageFile = null;
+      _imageSize = null;
+
+    });
+
+    final XFile? pickedImage = await _picker.pickImage(
+        source: imageSource,
+        maxWidth: 1980,
+        maxHeight: 1080,
+        imageQuality: 100
+    );
+
+    final File? imageFile = File(pickedImage!.path);
+
+
+
+    if (imageFile != null) {
+      _setImagePath();
+      _getImageSize(imageFile);
+
+
+    }
+
+    setState(() {
+      _imageFile = imageFile;
+      _imageSave = pickedImage.path;
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+  void _getImageSize(File imageFile) {
+    final Image image = Image.file(imageFile);
+
+    image.image.resolve(ImageConfiguration()).addListener(
+        ImageStreamListener((ImageInfo info, bool _) {
+          setState(() {
+            _imageSize = Size(
+              info.image.width.toDouble(),
+              info.image.height.toDouble(),
+            );
+          });
+        })
     );
   }
+
+
+  Widget _makeImage() {
+    return Container(
+      constraints: BoxConstraints.expand(),
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: Image.file(_imageFile!).image,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+  @override
+  Widget build(BuildContext context){
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("ShotingPage"),
+      ),
+      body: _imageFile == null
+          ? Center(child: Text("No image selected"))
+          : _makeImage(),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          FloatingActionButton(
+            heroTag: "hero1",
+            onPressed:(){_getLicenseplate(ImageSource.gallery);} ,
+            tooltip: "Select Image",
+            child: Icon(Icons.add_photo_alternate),
+          ),
+          Padding(padding: EdgeInsets.all(10.0)),
+          FloatingActionButton(
+            heroTag: "hero2",
+            onPressed:(){_getLicenseplate(ImageSource.camera);} ,
+            tooltip: "Take Photo",
+            child: Icon(Icons.add_a_photo),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 }
+
+

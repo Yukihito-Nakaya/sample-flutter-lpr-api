@@ -1,14 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as path;
-import 'package:http_parser/http_parser.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http_parser/http_parser.dart';
 import 'dart:async';
 import '../models/recognitionlicenseplate.dart';
 
@@ -46,30 +43,16 @@ class TakePictureScreen extends StatefulWidget {
 
 class TakePictureScreenState extends State<TakePictureScreen>{
   File? _imageFile;
-  Size? _imageSize;
-
-  // List _recognitionResults = [];
   final ImagePicker _picker = ImagePicker();
-  String _imagePath = '';
-  String _imageSave = '';
-
-  void _setImagePath() async {
-    _imagePath = (await getApplicationDocumentsDirectory()).path;
-  }
 
   @override
   void initState() {
     super.initState();
-    _setImagePath();
   }
-
-
 
   void _getLicensePlate(ImageSource imageSource)async {
     setState(() {
       _imageFile = null;
-      _imageSize = null;
-
     });
 
     final XFile? pickedImage = await _picker.pickImage(
@@ -81,35 +64,14 @@ class TakePictureScreenState extends State<TakePictureScreen>{
 
     final File? imageFile = File(pickedImage!.path);
 
-
-
     if (imageFile != null) {
-      _setImagePath();
-      _getImageSize(imageFile);
-      LprApiReq(imageFile).then((model) => _apiInfo(model));
+      lprApiReq(imageFile).then((model) => _apiInfo(model));
     }
 
     setState(() {
       _imageFile = imageFile;
-      _imageSave = pickedImage.path;
     });
   }
-
-  void _getImageSize(File imageFile) {
-    final Image image = Image.file(imageFile);
-
-    image.image.resolve(const ImageConfiguration()).addListener(
-        ImageStreamListener((ImageInfo info, bool _) {
-          setState(() {
-            _imageSize = Size(
-              info.image.width.toDouble(),
-              info.image.height.toDouble(),
-            );
-          });
-        })
-    );
-  }
-
 
   Widget _makeImage() {
     return Container(
@@ -127,7 +89,8 @@ class TakePictureScreenState extends State<TakePictureScreen>{
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
-        title: const     Text("Sample LPR API"),
+        title: const Text("LPR API Sample",style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),),
+        backgroundColor: const Color(0xFF71C9CE),
       ),
       body: _imageFile == null
           ? const Center(child: Text("No image selected"))
@@ -137,16 +100,18 @@ class TakePictureScreenState extends State<TakePictureScreen>{
         children: <Widget>[
           FloatingActionButton(
             heroTag: "hero1",
+            backgroundColor: const Color(0xFF71C9CE),
             onPressed:(){_getLicensePlate(ImageSource.gallery);} ,
             tooltip: "Select Image",
-            child: const Icon(Icons.add_photo_alternate),
+            child: const Icon(Icons.add_photo_alternate,color: Colors.white),
           ),
           const Padding(padding: EdgeInsets.all(10.0)),
           FloatingActionButton(
             heroTag: "hero2",
+            backgroundColor: const Color(0xFF71C9CE),
             onPressed:(){_getLicensePlate(ImageSource.camera);} ,
             tooltip: "Take Photo",
-            child: const Icon(Icons.add_a_photo),
+            child: const Icon(Icons.add_a_photo,color: Colors.white),
           ),
         ],
       ),
@@ -158,48 +123,99 @@ class TakePictureScreenState extends State<TakePictureScreen>{
 
     if (model.length > 10 ){
       final results = RecognitionResults.fromJson(jsonDecode(model) as Map<String, dynamic>);
-      final String Area = results.PLATES[0].AREA;
-      final String Class = results.PLATES[0].CLASS;
-      final String Color = results.PLATES[0].COLOR;
-      final String Digits = results.PLATES[0].DIGITS;
-      final String Kana = results.PLATES[0].KANA;
-      final String Kind = results.PLATES[0].KIND;
+      final String areaName = results.PLATES[0].AREA;
+      final String classNumber = results.PLATES[0].CLASS;
+      final String kanaName = results.PLATES[0].KANA;
+      final String digitsNumber = results.PLATES[0].DIGITS;
 
+      final textResultsMain = '$areaName '' $classNumber '' $kanaName '' $digitsNumber';
 
-      final textResultsmain = Area+"  "+Class+"  "+Kana+"  "+Digits ;
-      final textResultscontents = Kind+"  "+Color ;
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder:(BuildContext context) => CupertinoActionSheet(
+          title: Text(textResultsMain,style:const TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize:23)),
+          actions: [
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
 
-      showDialog(
-          context: context,
-          builder: (_) => CupertinoAlertDialog(
-            title:Text(textResultsmain),
-            content: Text(textResultscontents),
-            actions: [
-              CupertinoDialogAction(
-                  child: const Text('撮り直す'),
-                  isDestructiveAction: true,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  }
-              ),
-            ],
-          )
+              child: const Text('閉じる',style: TextStyle(color: Colors.blue)),
+              onPressed: () async{
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        ),
+        barrierDismissible: false,
       );
-    } else {
-      showDialog(
-          context: context,
-          builder: (_) => CupertinoAlertDialog(
-            title: const Text('ナンバープレートが見つかりませんでした。'),
-            actions: [
-              CupertinoDialogAction(
-                  child:Text('撮り直す'),
-                  isDestructiveAction: true,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  }
-              ),
-            ],
-          )
+    }  else if(model == "noPlate") {
+
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder:(BuildContext context) => CupertinoActionSheet(
+          title: const Text('ナンバープレートが見つかりませんでした。'),
+          actions: [
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+
+              child: const Text('戻る',style: TextStyle(color: Colors.blue)),
+              onPressed: () async{
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        ),
+        barrierDismissible: false,
+      );
+    } else if(model == "tokenFalse") {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (BuildContext context) => CupertinoAlertDialog(
+          title: const Text('Tokenの設定が誤っています。\n 一度ご確認ください。'),
+          actions: <CupertinoDialogAction>[
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('戻る',style: TextStyle(color: Colors.black),),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
+    } else if(model == 'timeout'){
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (BuildContext context) => CupertinoAlertDialog(
+          title: const Text('タイムアウトしました。'),
+          actions: <CupertinoDialogAction>[
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('戻る',style: TextStyle(color: Colors.black),),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
+    }else if(model == 'unexpected error'){
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (BuildContext context) => CupertinoAlertDialog(
+          title: const Text('予期せぬエラーが発生しました。'),
+          actions: <CupertinoDialogAction>[
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('戻る',style: TextStyle(color: Colors.black),),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
       );
     }
   }
@@ -210,7 +226,7 @@ class TakePictureScreenState extends State<TakePictureScreen>{
   }
 
 //LPR APIリクエスト
-  LprApiReq(imageFile) async{
+lprApiReq(imageFile) async{
     //発行したTokenに変更してください。
     String apiToken = "Token";
     String uri = 'https://api.sensing-api.com/api/lpr-entry?token=${apiToken}';
@@ -218,8 +234,8 @@ class TakePictureScreenState extends State<TakePictureScreen>{
 
     var request = http.MultipartRequest('PUT',Uri.parse(uri));
     request.files.add(await http.MultipartFile.fromPath('image1',imagePic, contentType: MediaType('image','jpeg')));
-    // request.files.add(await http.MultipartFile.fromBytes('meta',(await rootBundle.load('json/parm.json')).buffer.asUint8List(),
-    //     filename:'parm.json',contentType: MediaType('application','json')));
+    request.files.add(await http.MultipartFile.fromBytes('meta',(await rootBundle.load('assets/json/param.json')).buffer.asUint8List(),
+        filename:'param.json',contentType: MediaType('application','json')));
 
     var timeoutDuration = const Duration(seconds: 30);
 
@@ -232,7 +248,6 @@ class TakePictureScreenState extends State<TakePictureScreen>{
         final json = jsonDecode(respStr);
         if (json['RES'] == 1){
           return respStr;
-
         }else{
           return "noPlate";
         }

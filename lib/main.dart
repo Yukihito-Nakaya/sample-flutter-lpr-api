@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http_parser/http_parser.dart';
 import 'dart:async';
-import '../models/recognitionlicenseplate.dart';
+import 'models/recognitionlicenseplate.dart';
 
 void main() {
   runApp(const SampleApp());
@@ -62,11 +62,9 @@ class TakePictureScreenState extends State<TakePictureScreen>{
       imageQuality: 90,
     );
 
-    final File? imageFile = File(pickedImage!.path);
+    final File imageFile = File(pickedImage!.path);
 
-    if (imageFile != null) {
-      lprApiReq(imageFile).then((model) => _apiInfo(model));
-    }
+    lprApiReq(imageFile).then((model) => _apiInfo(model));
 
     setState(() {
       _imageFile = imageFile;
@@ -118,7 +116,6 @@ class TakePictureScreenState extends State<TakePictureScreen>{
     );
   }
 
-  @override
   void _apiInfo(model){
 
     if (model.length > 10 ){
@@ -229,12 +226,12 @@ class TakePictureScreenState extends State<TakePictureScreen>{
 lprApiReq(imageFile) async{
     //発行したTokenに変更してください。
     String apiToken = "Token";
-    String uri = 'https://api.sensing-api.com/api/lpr-entry?token=${apiToken}';
+    String uri = 'https://api.sensing-api.com/api/lpr-entry?token=$apiToken';
     var imagePic = imageFile.path;
 
     var request = http.MultipartRequest('PUT',Uri.parse(uri));
     request.files.add(await http.MultipartFile.fromPath('image1',imagePic, contentType: MediaType('image','jpeg')));
-    request.files.add(await http.MultipartFile.fromBytes('meta',(await rootBundle.load('assets/json/param.json')).buffer.asUint8List(),
+    request.files.add(http.MultipartFile.fromBytes('meta',(await rootBundle.load('assets/json/param.json')).buffer.asUint8List(),
         filename:'param.json',contentType: MediaType('application','json')));
 
     var timeoutDuration = const Duration(seconds: 30);

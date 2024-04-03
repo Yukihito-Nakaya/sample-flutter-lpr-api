@@ -1,7 +1,10 @@
+// ignore_for_file: camel_case_types, non_constant_identifier_names, duplicate_ignore
+
 import 'package:json_annotation/json_annotation.dart';
 part 'recognitionlicenseplate.g.dart';
 
 
+// ignore: camel_case_types
 @JsonSerializable()
 class plates {
   plates({

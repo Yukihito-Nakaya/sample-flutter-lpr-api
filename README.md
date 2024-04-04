@@ -1,16 +1,10 @@
-# lprsample
+# Flutter + LPR API ナンバープレート認識サンプコード
 
-A new Flutter project.
+ナンバープレート撮影記録用のAndroidアプリ『LPRMemo』で利用されている撮影した画像を、ナンバープレート認識API『LPR API』に
+送り受け取った認識結果を表示するサンプルコードになります。
 
-## Getting Started
+## LPRMemoとは
+https://blog.app.sensing-api.com/wp-admin/post.php?post=794&action=edit
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## LPR APIとは
+https://lpr.sensing-api.com/
